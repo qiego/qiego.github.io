@@ -50,8 +50,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 
   <script>
-    // Lista codici validi
-    const validCodes = ["8001234567890", "1234567890128", "5901234123457"];
+    // Dizionario codice → nome item
+    const items = {
+      "8001234567890": "Pasta Barilla 500g",
+      "1234567890128": "Bottiglia d'acqua 1L",
+      "5901234123457": "Cioccolato Milka 100g"
+    };
 
     const scanBtn = document.getElementById("scanBtn");
     const manualBtn = document.getElementById("manualBtn");
@@ -77,8 +81,9 @@
     }
 
     function checkCode(code) {
-      if (validCodes.includes(code.trim())) {
-        showMessage("Codice trovato: " + code, "success");
+      const itemName = items[code.trim()];
+      if (itemName) {
+        showMessage(`✔ Codice trovato: ${code}<br>📦 Prodotto: <b>${itemName}</b>`, "success");
       } else {
         showMessage("Codice non trovato: " + code, "error");
       }
