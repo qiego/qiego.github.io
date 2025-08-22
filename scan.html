@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scanner QR & Barcode</title>
+  <title>Scanner EAN13</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #f9f9f9; }
     img { max-width: 80%; margin-top: 20px; }
-    .buttons, .manual, #reader, #barcode-scanner { margin-top: 20px; }
+    .buttons, .manual, #barcode-scanner { margin-top: 20px; }
     button {
       background: #007bff; color: white; border: none;
       padding: 12px 20px; margin: 5px; font-size: 16px;
@@ -24,7 +24,7 @@
     }
     .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    #reader, #barcode-scanner { width: 90%; margin: auto; }
+    #barcode-scanner { width: 90%; margin: auto; }
     video { width: 100%; border-radius: 10px; }
   </style>
 </head>
@@ -43,27 +43,23 @@
     <button id="sendBtn">SEND</button>
   </div>
 
-  <div id="reader" style="display:none;"></div>
   <div id="barcode-scanner" style="display:none;"></div>
-
   <div id="message"></div>
 
-  <!-- Librerie -->
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- Libreria QuaggaJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 
   <script>
-    const validCodes = ["ABC123", "XYZ789", "QWERTY", "8001234567890"]; // Lista codici validi
+    // Lista codici validi
+    const validCodes = ["8001234567890", "1234567890128", "5901234123457"];
 
     const scanBtn = document.getElementById("scanBtn");
     const manualBtn = document.getElementById("manualBtn");
     const manualDiv = document.querySelector(".manual");
     const sendBtn = document.getElementById("sendBtn");
     const messageDiv = document.getElementById("message");
-    const readerDiv = document.getElementById("reader");
     const barcodeDiv = document.getElementById("barcode-scanner");
 
-    let html5QrCode;
     let quaggaRunning = false;
 
     function showMessage(text, type) {
@@ -72,7 +68,6 @@
       messageDiv.style.display = "block";
       document.querySelector(".buttons").style.display = "none";
       manualDiv.style.display = "none";
-      readerDiv.style.display = "none";
       barcodeDiv.style.display = "none";
 
       messageDiv.onclick = () => {
@@ -100,63 +95,41 @@
       checkCode(code);
     };
 
-    // SCAN
+    // SCAN con QuaggaJS (EAN-13)
     scanBtn.onclick = () => {
-      if (confirm("Vuoi scansionare un QR code (OK) o un Barcode lineare (Annulla)?")) {
-        // QR CODE
-        document.querySelector(".buttons").style.display = "none";
-        readerDiv.style.display = "block";
+      document.querySelector(".buttons").style.display = "none";
+      barcodeDiv.style.display = "block";
 
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          (decodedText) => {
-            html5QrCode.stop().then(() => {
-              checkCode(decodedText);
-            });
-          }
-        ).catch(() => {
-          showMessage("Errore nell'accesso alla fotocamera", "error");
-        });
-      } else {
-        // BARCODE
-        document.querySelector(".buttons").style.display = "none";
-        barcodeDiv.style.display = "block";
-
-        if (quaggaRunning) {
-          Quagga.stop();
-        }
-
-        Quagga.init({
-          inputStream: {
-            name: "Live",
-            type: "LiveStream",
-            target: document.querySelector("#barcode-scanner"),
-            constraints: {
-              facingMode: "environment"
-            }
-          },
-          decoder: {
-            readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"]
-          }
-        }, (err) => {
-          if (err) {
-            showMessage("Errore inizializzazione Quagga: " + err, "error");
-            return;
-          }
-          Quagga.start();
-          quaggaRunning = true;
-        });
-
-        Quagga.onDetected(data => {
-          if (data && data.codeResult && data.codeResult.code) {
-            Quagga.stop();
-            quaggaRunning = false;
-            checkCode(data.codeResult.code);
-          }
-        });
+      if (quaggaRunning) {
+        Quagga.stop();
       }
+
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector("#barcode-scanner"),
+          constraints: { facingMode: "environment" }
+        },
+        decoder: {
+          readers: ["ean_reader"]  // Solo EAN-13
+        }
+      }, (err) => {
+        if (err) {
+          showMessage("Errore inizializzazione Quagga: " + err, "error");
+          return;
+        }
+        Quagga.start();
+        quaggaRunning = true;
+      });
+
+      Quagga.onDetected(data => {
+        if (data && data.codeResult && data.codeResult.code) {
+          Quagga.stop();
+          quaggaRunning = false;
+          checkCode(data.codeResult.code);
+        }
+      });
     };
   </script>
 </body>
